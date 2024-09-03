@@ -1,0 +1,100 @@
+-- Criar o banco de dados e selecionar o banco de dados
+CREATE DATABASE SistemaControleEstoque;
+SET SQL_SAFE_UPDATES = 0;
+USE SistemaControleEstoque;
+
+-- Criar a tabela Fornecedores
+CREATE TABLE Fornecedores (
+    FornecedorID INT AUTO_INCREMENT PRIMARY KEY,
+    Nome VARCHAR(100) NOT NULL,
+    Contato VARCHAR(100),
+    Telefone VARCHAR(20)
+);
+
+-- Criar a tabela Produtos
+CREATE TABLE Produtos (
+    ProdutoID INT AUTO_INCREMENT PRIMARY KEY,
+    Nome VARCHAR(100) NOT NULL,
+    Descricao TEXT,
+    QuantidadeEstoque INT DEFAULT 0,
+    Preco DECIMAL(10, 2) NOT NULL,
+    FornecedorID INT,
+    FOREIGN KEY (FornecedorID) REFERENCES Fornecedores(FornecedorID)
+);
+
+-- Criar a tabela PedidosReposicao
+CREATE TABLE PedidosReposicao (
+    PedidoID INT AUTO_INCREMENT PRIMARY KEY,
+    ProdutoID INT,
+    Quantidade INT NOT NULL,
+    DataPedido DATE NOT NULL,
+    FOREIGN KEY (ProdutoID) REFERENCES Produtos(ProdutoID)
+);
+
+-- Inserir dados na tabela Fornecedores
+INSERT INTO Fornecedores (Nome, Contato, Telefone)
+VALUES
+('Fornecedor A', 'João Silva', '1234-5678'),
+('Fornecedor B', 'Maria Oliveira', '2345-6789'),
+('Fornecedor C', 'Carlos Souza', '3456-7890');
+
+-- Inserir dados na tabela Produtos
+INSERT INTO Produtos (Nome, Descricao, QuantidadeEstoque, Preco, FornecedorID)
+VALUES
+('Produto 1', 'Descrição do Produto 1', 100, 10.00, 1),
+('Produto 2', 'Descrição do Produto 2', 200, 15.50, 2),
+('Produto 3', 'Descrição do Produto 3', 150, 12.75, 3);
+
+-- Inserir dados na tabela PedidosReposicao
+INSERT INTO PedidosReposicao (ProdutoID, Quantidade, DataPedido)
+VALUES
+(1, 50, '2024-09-01'),
+(2, 30, '2024-09-02'),
+(3, 20, '2024-09-03');
+
+-- Consultar produtos em estoque
+SELECT * FROM Produtos;
+
+-- Consultar pedidos de reposição feitos
+SELECT * FROM PedidosReposicao;
+
+-- Consultar informações sobre fornecedores e produtos juntos
+SELECT p.Nome AS Produto, p.QuantidadeEstoque, f.Nome AS Fornecedor
+FROM Produtos p
+JOIN Fornecedores f ON p.FornecedorID = f.FornecedorID;
+
+-- Atualizar a quantidade de produtos em estoque após um pedido de reposição
+UPDATE Produtos
+SET QuantidadeEstoque = QuantidadeEstoque + (
+    SELECT Quantidade
+    FROM PedidosReposicao
+    WHERE ProdutoID = Produtos.ProdutoID
+    AND PedidoID = 1
+   
+)WHERE ProdutoID = 1;
+
+-- Excluir um produto descontinuado
+-- Identificar os registros dependentes na tabela pedidosreposicao
+SELECT * FROM pedidosreposicao WHERE ProdutoID = 3;
+
+-- Remover os registros dependentes da tabela pedidosreposicao
+DELETE FROM pedidosreposicao WHERE ProdutoID = 3;
+
+-- Deletar o registro da tabela Produtos
+DELETE FROM Produtos WHERE ProdutoID = 3;
+
+-- (Opcional) Se preferir alterar a restrição de chave estrangeira para exclusão em cascata:
+-- Primeiro, remova a restrição de chave estrangeira existente
+ALTER TABLE pedidosreposicao
+DROP FOREIGN KEY pedidosreposicao_ibfk_1;
+
+-- Em seguida, adicione a restrição de chave estrangeira com a opção ON DELETE CASCADE
+ALTER TABLE pedidosreposicao
+ADD CONSTRAINT pedidosreposicao_ibfk_1
+FOREIGN KEY (ProdutoID) REFERENCES produtos(ProdutoID)
+ON DELETE CASCADE;
+
+
+-- Excluir um fornecedor que não faz mais parte da empresa
+DELETE FROM Fornecedores
+WHERE FornecedorID = 3;
